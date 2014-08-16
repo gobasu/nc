@@ -19,6 +19,9 @@
     "dependencies": {
         "promise": "~5.0.0",
         "handlebars": "~2.0.0",
-        "express": "4.x"
+        "express": "4.x",
+        "body-parser": "latest",
+        "cookie-parser": "latest",
+        "express-session": "latest"
     }
 }

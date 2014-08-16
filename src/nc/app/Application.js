@@ -18,7 +18,11 @@ var Application = util.Observer.extend(function Application() {
     self.config = {};
     self.modules = {};
 
-
+    /**
+     * Loads configs from {appdir}/config directory and merges them into
+     * one config literal object
+     * @private
+     */
     function _loadConfig() {
         var configDir = path.join(this.getAppDir(), 'config');
         if (!fs.existsSync(configDir)) {
@@ -38,6 +42,10 @@ var Application = util.Observer.extend(function Application() {
         }
     }
 
+    /**
+     * Loads all core modules
+     * @private
+     */
     function _loadModules() {
         var loadedModules = [];
         var awaitingModules = [];
@@ -120,6 +128,7 @@ var Application = util.Observer.extend(function Application() {
     self.getAppDir = function() {
         return _appDir;
     };
+
 
     self.run = function() {
         if (!fs.existsSync(self.getAppDir())) {

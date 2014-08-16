@@ -20,7 +20,6 @@ var Module = util.Class(function Module(app, config) {
     if (Module.new) {
         self.init(app, config);
     }
-
 });
 
 module.exports = Module;
