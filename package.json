@@ -1,0 +1,26 @@
+{
+    "name": "wb",
+    "version": "0.2.0",
+    "description": "WebCore",
+    "private": true,
+    "main": "src/nc/index.js",
+    "license": "MIT",
+    "scripts": {
+        "test": "jasmine-node --verbose --matchall tests"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/webcore/core.git"
+    },
+    "author": "Crac",
+    "devDependencies": {
+        "jasmine-node": "latest",
+        "benchmark": "latest"
+    },
+    "dependencies": {
+        "promise": "~5.0.0",
+        "handlebars": "~2.0.0",
+        "express": "4.x",
+		"js.class": "latest"
+    }
+}
