@@ -1,5 +1,5 @@
 var util = require('util');
-var isLiteral = require('./isLiteralObject');
+var isLiteral = require('./is-literal-object');
 
 function copyPrimitive(object) {
     var copy;

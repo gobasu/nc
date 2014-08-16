@@ -1,9 +1,12 @@
 module.exports = {
-    Class: require('./Class.js'),
-    Observer: require('./Observer.js'),
+    Class: require('./class.js'),
+    Observer: require('./observer.js'),
     copy: require('./copy.js'),
     merge: require('./merge.js'),
-    copyPrimitive: require('./copyPrimitive.js'),
-    isHash: require('./isLiteralObject.js'),
+    copyPrimitive: require('./copy-primitive.js'),
+    isHash: require('./is-literal-object.js'),
+    collection: {
+        remove: require('./collection-remove.js')
+    }
 
 };

@@ -39,19 +39,67 @@ var Application = util.Observer.extend(function Application() {
     }
 
     function _loadModules() {
+        var loadedModules = [];
+        var awaitingModules = [];
+
         var modulesDir = path.join(Application.FW_DIR, 'modules');
         var moduleList = fs.readdirSync(modulesDir);
+
+
+        function _resolveDependencies(name) {
+            if (awaitingModules.length === 0) {
+                return;
+            }
+
+            for (var i in awaitingModules) {
+                var module = awaitingModules[i];
+
+                if (module._dependencies.indexOf(name) >= 0) {
+                    util.collection.remove(module._dependencies, name);
+
+                    if(module._dependencies.length === 0) {
+                        console.log('Module ' + module._name + ' ready');
+                        module.ready();
+                        _resolveDependencies(module._name);
+                    }
+                }
+            }
+        }
+
         for (var m in moduleList) {
             var name = moduleList[m];
             var modulePath = path.join(modulesDir, name, 'module.js');
-            var moduleDefaultConfigPath = path.join(modulesDir, name, 'index.js');
             if (!fs.existsSync(modulePath)) {
                 console.warn('Module ' + name + ' was not loaded - missing module.js file');
                 continue;
             }
+            try {
+                var meta = require(path.join(modulesDir, name, 'index.js'));
+            } catch (e) {
+                throw new Error('Module\'s meta file is not readable');
+            }
 
+            var module = require(modulePath);
 
+            if (self.config.hasOwnProperty(name)) {
+                var config = util.merge(meta.config, self.config[name])
+            } else {
+                var config = meta.config;
+            }
+            self.modules[name] = new module(self, config);
+            self.modules[name]._name = name;
 
+            console.log('Module ' + name + ' loaded');
+
+            if (meta.hasOwnProperty('dependencies') && meta.dependencies.length > 0) {
+                self.modules[name]._dependencies = meta.dependencies;
+                awaitingModules.push(self.modules[name]);
+                continue;
+            }
+            console.log('Module ' + name + ' ready');
+            self.modules[name].ready();
+            loadedModules.push(name);
+            _resolveDependencies(name);
         }
     }
 

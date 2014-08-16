@@ -1,21 +1,11 @@
 var util = require('../util');
 
-var Module = util.Class(function Module(app) {
+var Module = util.Class(function Module(app, config) {
     var self = this;
-    var _config;
-    var _app = app;
 
-    self.init = function() {
-
-    };
-
-    /**
-     * Gets module config
-     */
-    self.config = function() {
-        if (_config === null) {
-            _config = _app.config(self.name);
-        }
+    self.init = function(app, config) {
+        self.app = app;
+        self.config = config;
     };
 
 
@@ -28,7 +18,7 @@ var Module = util.Class(function Module(app) {
     };
 
     if (Module.new) {
-        self.init.apply(self, Array.prototype.slice.call(arguments, 1));
+        self.init(app, config);
     }
 
 });

@@ -1,5 +1,5 @@
 var copy = require('../../src/nc/util/copy');
-var copyPrimitive = require('../../src/nc/util/copyPrimitive');
+var copyPrimitive = require('../../src/nc/util/copy-primitive');
 
 describe('nc.util.copy',function() {
 

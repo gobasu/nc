@@ -1,6 +1,6 @@
-var Module = require('../app/Module.js');
-var util = require('../util');
-var http = require('http');
+var Module = require('../../app/Module.js');
+var util = require('../../util');
+var express = require('express');
 
 var HTTPModule = Module.extend(function HTTPModule() {
     var self = this;

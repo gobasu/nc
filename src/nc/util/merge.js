@@ -1,4 +1,4 @@
-var copy = require('./copyPrimitive');
+var copy = require('./copy-primitive');
 var isArray = require('util').isArray;
 
 function merge(a, b, depth) {
