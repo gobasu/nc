@@ -1,171 +1,181 @@
 var util = require('../util');
 var fs = require('fs');
 var path = require('path');
+var Extension = require('./Extension');
+
+var _appDir;
+var _mediator;
 
 /**
- * Application Instance
- * @type Application
+ * Loads configs from {appdir}/config directory and merges them into
+ * one config literal object
+ * @private
  */
-var _instance;
-
-var Application = util.Observer.extend(function Application() {
-    var self = this;
-    var parent = Application.prototype;
-    var _mediator = new util.Observer();
-    var _appDir;
-
-
-    self.config = {};
-    self.modules = {};
-
-    /**
-     * Loads configs from {appdir}/config directory and merges them into
-     * one config literal object
-     * @private
-     */
-    function _loadConfig() {
-        var configDir = path.join(this.getAppDir(), 'config');
-        if (!fs.existsSync(configDir)) {
-            throw new Error('Make sure config dir do exists in your application path');
-        }
-        var configList = fs.readdirSync(configDir);
-
-
-        for (var i in configList) {
-            var configFile = path.join(configDir, configList[i]);
-            try {
-                var config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-            } catch (e) {
-                throw new Error('Could not read config file :' + configFile + "\n" + e.message);
-            }
-            this.config = util.merge(this.config, config);
-        }
+function _loadConfig() {
+    var configDir = path.join(this.dir(), 'config');
+    if (!fs.existsSync(configDir)) {
+        throw new Error('Make sure config dir do exists in your application path');
     }
+    var configList = fs.readdirSync(configDir);
 
-    /**
-     * Loads all core modules
-     * @private
-     */
-    function _loadModules() {
-        var loadedModules = [];
-        var awaitingModules = [];
+    for (var i in configList) {
+        var configFile = path.join(configDir, configList[i]);
+        try {
+            var config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+        } catch (e) {
+            throw new Error('Could not read config file :' + configFile + "\n" + e.message);
+        }
+        this.config = util.merge(this.config, config);
+    }
+}
 
-        var modulesDir = path.join(Application.FW_DIR, 'modules');
-        var moduleList = fs.readdirSync(modulesDir);
+/**
+ * Loads all core extensions
+ * @private
+ */
+function _loadExtensions() {
+    var loadedExtensions = [];
+    var awaitingExtensions = [];
+
+    var extensionsDir = path.join(Application.FW_DIR, 'extensions');
+    var extensionList = fs.readdirSync(extensionsDir);
+
+    var loading = true;
+    var app = this;
 
 
-        function _resolveDependencies(name) {
-            if (awaitingModules.length === 0) {
-                return;
-            }
+    function _resolveDependencies(name) {
+        if (awaitingExtensions.length === 0) {
+            return;
+        }
 
-            for (var i in awaitingModules) {
-                var module = awaitingModules[i];
+        for (var i in awaitingExtensions) {
+            var extension = awaitingExtensions[i];
 
-                if (module._dependencies.indexOf(name) >= 0) {
-                    util.collection.remove(module._dependencies, name);
+            if (extension._dependencies.indexOf(name) >= 0) {
+                util.collection.remove(extension._dependencies, name);
 
-                    if(module._dependencies.length === 0) {
-                        console.log('Module ' + module._name + ' ready');
-                        module.ready();
-                        _resolveDependencies(module._name);
+                if(extension._dependencies.length === 0) {
+                    console.log('Extension ' + extension._name + ' ready');
+                    extension.ready();
+                    util.collection.remove(awaitingExtensions, extension);
+                    if (awaitingExtensions.length > 0) {
+                        _resolveDependencies(extension._name);
                     }
                 }
             }
         }
 
-        for (var m in moduleList) {
-            var name = moduleList[m];
-            var modulePath = path.join(modulesDir, name, 'module.js');
-            if (!fs.existsSync(modulePath)) {
-                console.warn('Module ' + name + ' was not loaded - missing module.js file');
-                continue;
-            }
-            try {
-                var meta = require(path.join(modulesDir, name, 'index.js'));
-            } catch (e) {
-                throw new Error('Module\'s meta file is not readable');
-            }
-
-            var module = require(modulePath);
-
-            if (self.config.hasOwnProperty(name)) {
-                var config = util.merge(meta.config, self.config[name])
-            } else {
-                var config = meta.config;
-            }
-            self.modules[name] = new module(self, config);
-            self.modules[name]._name = name;
-
-            console.log('Module ' + name + ' loaded');
-
-            if (meta.hasOwnProperty('dependencies') && meta.dependencies.length > 0) {
-                self.modules[name]._dependencies = meta.dependencies;
-                awaitingModules.push(self.modules[name]);
-                continue;
-            }
-            console.log('Module ' + name + ' ready');
-            self.modules[name].ready();
-            loadedModules.push(name);
-            _resolveDependencies(name);
+        if (!loading) {
+            app.mediator().dispatch(Application.ON_READY, this);
         }
     }
 
-    self.init = function() {
-        //call parent's constructor
-        parent.init.apply(self);
-
-    };
-
-    self.getMediator = function() {
-        return _mediator;
-    };
-
-    self.setAppDir = function(dir) {
-        _appDir = dir;
-    };
-
-    self.getAppDir = function() {
-        return _appDir;
-    };
-
-
-    self.run = function() {
-        if (!fs.existsSync(self.getAppDir())) {
-            throw new Error('Non existing application dir. Make sure you set up application dir correctly.');
+    for (var m in extensionList) {
+        var name = extensionList[m];
+        var extensionPath = path.join(extensionsDir, name, 'index.js');
+        if (!fs.existsSync(extensionPath)) {
+            console.warn('Extension ' + name + ' was not loaded - missing index.js file');
+            continue;
         }
 
-        self.dispatch(Application.ON_INIT, self);
+        var ExtensionClass = require(extensionPath);
+
+        if (this.config.hasOwnProperty(name)) {
+
+            var config = util.merge(ExtensionClass.defaults, this.config[name])
+        } else {
+            var config = util.copy(ExtensionClass.defaults) || {};
+        }
+
+        if (typeof ExtensionClass !== 'function') {
+            console.warn('Extension ' + name + ' not loaded - Extension declaration must extend Extension class');
+            continue;
+        }
+
+        this.extensions[name] = new ExtensionClass(this, config);
+        if (!this.extensions[name] instanceof Extension) {
+            delete this.extensions[name];
+            console.warn('Extension ' + name + ' not loaded - Extension declaration must extend Extension class');
+            continue;
+        }
+
+        this.extensions[name].__name = name;
+
+        console.log('Extension ' + name + ' loaded');
+
+        if (Array.isArray(ExtensionClass['dependencies']) && ExtensionClass.dependencies.length > 0) {
+            this.extensions[name].__dependencies = util.copy(ExtensionClass.dependencies);
+            awaitingExtensions.push(this.extensions[name]);
+            continue;
+        }
+        console.log('Extension ' + name + ' ready');
+        this.extensions[name].ready();
+        loadedExtensions.push(name);
+        _resolveDependencies(name);
+    }
+    if (awaitingExtensions.length === 0) {
+        this.mediator().dispatch(Application.ON_READY, this);
+    }
+    loading = false;
+}
+
+var Application = util.Class({
+    singleton: true,
+    create: function() {
+        console.log('create application');
+        _mediator = new util.Observer();
+        this.config = {};
+        this.extensions = {};
+        this.modules = {};
+        this.load = {};
+        this._errorHandler = function(e) {throw e};
+
+    },
+    dir: function (dir) {
+        if (dir) {
+            _appDir = dir;
+        }
+        return _appDir;
+    },
+    mediator: function() {
+
+        return _mediator;
+    },
+    use: function() {
+
+    },
+    run: function() {
+        if (!fs.existsSync(this.dir())) {
+            throw new Error('Non existing application dir.' + this.dir() + ' Make sure you set up application dir correctly.');
+        }
+
+        this.mediator().dispatch(Application.ON_INIT, this);
 
         //load config
-        _loadConfig.call(self);
+        _loadConfig.call(this);
 
-        //load modules
-        _loadModules.call(self);
+        //load extensions
+        _loadExtensions.call(this);
 
-        //init modules
-
-
-        self.dispatch(Application.ON_RUN, self);
-    };
-
-
-    if (Application.new) {
-        throw new Error('Could not create instance of Application call Application.instance instead');
+        this.mediator().dispatch(Application.ON_RUN, this);
+    },
+    /**
+     * Sets/gets error handler
+     */
+    error: function(handler) {
+        if (handler) {
+            this._errorHandler = handler;
+        }
+        return this._errorHandler;
     }
 }).static({
     ON_RUN: 'onApplicationRun',
     ON_INIT: 'onApplicationInit',
+    ON_READY: 'onApplicationReady',
     FW_DIR: path.resolve(path.join(__dirname, '..')),
-    instance: function() {
-        Application.new = false;
-        if (!(_instance instanceof Application)) {
-            _instance = new Application();
-            _instance.init();
-        }
-        Application.new = true;
-        return _instance;
-    }
+    ON_NOT_FOUND: 'onNotFound',
+    ON_ERROR: 'onError'
 });
 
 module.exports = Application;

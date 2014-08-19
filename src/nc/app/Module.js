@@ -1,24 +1,15 @@
 var util = require('../util');
+var Application = require('./Application');
 
-var Module = util.Class(function Module(app, config) {
-    var self = this;
+var Module = util.Class({
+    create: function(app) {
+        this.app = app;
 
-    self.init = function(app, config) {
-        self.app = app;
-        self.config = config;
-    };
-
-
-    /**
-     * Bind on ready callback when all dependencies are loaded
-     * and module is ready to be executed
-     */
-    self.ready = function() {
-
-    };
-
-    if (Module.new) {
-        self.init(app, config);
+    },
+    path: function(string) {
+        string = string.replace('%APPDIR%', this.app.dir());
+        string = string.replace('%FWDIR%', Application.FW_DIR);
+        return string;
     }
 });
 

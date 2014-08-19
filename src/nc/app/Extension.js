@@ -1,8 +1,8 @@
 var util = require('../util');
 var Application = require('./Application');
 
-var View = util.Class({
-    create: function() {
+var Extension = util.Class({
+    create: function(app, config) {
         this.app = app;
         this.config = config;
     },
@@ -16,4 +16,4 @@ var View = util.Class({
     }
 });
 
-module.exports = View;
+module.exports = Extension;

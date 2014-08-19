@@ -1,5 +1,29 @@
 var Class = require('../../src/nc/util/class');
+var Cls = require('../../src/nc/util/class2');
 describe("nc.util.Class suite", function() {
+
+
+    it("Class - prototype" , function() {
+        var Example = Cls({
+            $singleton: true,
+            doA: function() {
+                return 'b';
+            }
+        });
+
+        Example.prototype.doA = function() {
+            return 'a';
+        };
+
+
+        var a = new Example();
+
+
+
+        expect(a.doA()).toEqual('a');
+
+
+    });
 
     it("Class - define", function() {
         var Example = Class(function() { });

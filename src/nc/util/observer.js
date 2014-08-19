@@ -2,22 +2,14 @@ var util = require('util');
 var Class = require('./class');
 var EventEmitter = require('events').EventEmitter;
 
-/**
- * Observer Class utilizes the pattern
- *
- * @constructor
- */
-var Observer = Class(function Observer() {
-    var self = this;
-    var _emitter;
+var Observer = Class({
 
     /**
      * @constructor
      */
-    self.init = function() {
-        _emitter = new EventEmitter();
-    };
-
+    create: function() {
+        this._emitter = new EventEmitter();
+    },
     /**
      * Attach listener to given event or events
      *
@@ -25,18 +17,17 @@ var Observer = Class(function Observer() {
      * @param {function} listener
      * @memberOf nc.Observer
      */
-    self.addListener = function(event, listener) {
+    addListener: function(event, listener) {
         if (util.isArray(event)) {
             for (var i in event) {
                 var e = event[i];
-                _emitter.addListener(e, listener);
+                this._emitter.addListener(e, listener);
             }
             return this;
         }
-        _emitter.addListener(event, listener);
+        this._emitter.addListener(event, listener);
         return this;
-    };
-
+    },
     /**
      * Removes listener(s) at given event or events
      *
@@ -44,33 +35,29 @@ var Observer = Class(function Observer() {
      * @param {function} listener
      * @memberOf nc.Observer
      */
-    self.removeListener = function(event, listener) {
-
+    removeListener: function(event, listener) {
         if (util.isArray(event)) {
             for (var i in event) {
                 var e = event[i];
-                _emitter.removeListener(e, listener);
+                this._emitter.removeListener(e, listener);
             }
             return this;
         }
-        _emitter.removeListener(event, listener);
+        this._emitter.removeListener(event, listener);
         return this;
-
-    };
-
+    },
     /**
      * Dispatches an event
      *
      * @param {string} event
      * @memberOf nc.Observer
      */
-    self.dispatch = function() {
+    dispatch: function() {
         var args = Array.prototype.slice.call(arguments, 0);
         args.unshift(args[0]);
 
-        return _emitter.emit.apply(_emitter, args);
-    };
-
+        return this._emitter.emit.apply(this._emitter, args);
+    },
     /**
      * Checks whatever given listener listens for an event
      *
@@ -79,8 +66,8 @@ var Observer = Class(function Observer() {
      * @return {boolean} true if event has listener otherwise false
      * @memberOf nc.Observer
      */
-    self.hasListener = function(event, listener) {
-        var listeners = _emitter.listeners(event);
+    hasListener: function(event, listener) {
+        var listeners = this._emitter.listeners(event);
 
         if (listeners.length === 0) {
             return false;
@@ -96,12 +83,8 @@ var Observer = Class(function Observer() {
             }
         }
         return false;
-    };
-
-    //constructor
-    if (Observer.new) {
-        self.init();
     }
+
 
 });
 

@@ -5,7 +5,14 @@ function merge(a, b, depth) {
     var result;
     var depth = depth || 100;
     --depth;
-    if (isArray(a) && isArray(b)) {
+
+    if (typeof a === 'undefined' && typeof b === 'undefined') {
+        return b;
+    } else if (typeof a === 'undefined') {
+        return b;
+    } else if (typeof b === 'undefined') {
+        return a;
+    } else if (isArray(a) && isArray(b)) {
 
         result = [];
         result = result.concat(copy(a));

@@ -1,9 +1,9 @@
 var util = require('../util');
 
-var Controller = util.Class(function Controller(sandbox) {
-    var _sandbox;
-
-
+var Controller = util.Class({
+    create: function(module) {
+        this.module = module;
+    }
 });
 
 module.exports = Controller;
