@@ -1,14 +1,14 @@
 'use strict';
 var Handlebars = require('handlebars');
 var fs = require('fs');
-
+var path = require('path');
 var _blocks = {};
 
 Handlebars.layouts = {};
 Handlebars.registerHelper({
     extend: function() {
         var context = arguments[arguments.length - 1];
-        var options = context.data.root._options;
+        var meta = context.data.root.__meta__;
         var layout;
 
         if (arguments.length > 1) {
@@ -23,36 +23,33 @@ Handlebars.registerHelper({
         context.fn(context.data.root);
 
         //cached partial
-        if (Handlebars.layouts[layout]) {
-            var result = Handlebars.layouts[layout](context.data.root);
-            return result;
+        if (Handlebars.layouts[meta.theme + layout]) {
+            return Handlebars.layouts[meta.theme + layout](context.data.root);
         }
 
-        var layoutFilePath = options.layoutDir + "/" + layout + ".hb";
+        var layoutFilePath = path.join(meta.dir.theme, layout + ".html");
         if (!fs.existsSync(layoutFilePath)) {
             throw new Error("Layout file `" + layoutFilePath + "` does not exists");
         }
 
         var source = fs.readFileSync(layoutFilePath, 'utf8');
-        Handlebars.layouts[layout] = Handlebars.compile(source);
-        return Handlebars.layouts[layout](context.data.root);
+        Handlebars.layouts[meta.theme + layout] = Handlebars.compile(source);
+        return Handlebars.layouts[meta.theme + layout](context.data.root);
     },
     block: function() {
         var context = arguments[arguments.length - 1];
-        var options = context.data.root._options;
-        var result;
+        var meta = context.data.root.__meta__;
+        var name = null;
         if (arguments.length > 1) {
-            var name = arguments[0];
-        } else {
-            var name = null;
+            name = arguments[0];
         }
 
         //create block for template
         if (name) {
-            _blocks[options.moduleName] = _blocks[options.moduleName] || {};
-            _blocks[options.moduleName][options.templateName] = _blocks[options.moduleName][options.templateName] || {};
-            _blocks[options.moduleName][options.templateName][name] = context.fn;
-            _blocks[options.moduleName][options.templateName][name].mode = context.hash.mode || 'replace';
+            _blocks[meta.theme] = _blocks[meta.theme] || {};
+            _blocks[meta.theme][meta.name] = _blocks[meta.theme][meta.name] || {};
+            _blocks[meta.theme][meta.name][name] = context.fn;
+            _blocks[meta.theme][meta.name][name].mode = context.hash.mode || 'replace';
             return;
         }
 
@@ -61,11 +58,12 @@ Handlebars.registerHelper({
             throw new Error("Layout's block elements must contain `define` attribute in template " + options.templatePath);
         }
         name = context.hash.define;
+        var result;
+
         result = context.fn(context.data.root);
 
-        if (_blocks[options.moduleName] && _blocks[options.moduleName][options.templateName] &&
-            _blocks[options.moduleName][options.templateName][name]) {
-            var block = _blocks[options.moduleName][options.templateName][name];
+        if (_blocks[meta.theme] && _blocks[meta.theme][meta.name] && _blocks[meta.theme][meta.name][name]) {
+            var block = _blocks[meta.theme][meta.name][name];
             switch (block.mode) {
                 case 'append':
                     result += block(context.data.root);
@@ -77,14 +75,14 @@ Handlebars.registerHelper({
                     result = block(context.data.root);
                     break;
                 default:
-                    throw new Error('Unknown block mode in layout used by template ' + options.templatePath);
+                    throw new Error('Unknown block mode `' + block.mode + '` used in layout by template ' + meta.file);
                     break;
             }
         }
-
         return result;
     }
 
 });
 
 
+module.exports = Handlebars;

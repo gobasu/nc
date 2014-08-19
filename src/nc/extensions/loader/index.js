@@ -41,6 +41,7 @@ var Loader = Extension.extend({
             var ModuleClass = require(modulePath);
             this.app.modules[name] = new ModuleClass(this.app);
             this.app.modules[name].controllers = {};
+            this.app.modules[name].dirname = path.join(modulesDir, name);
 
             //load controllers
             console.log("Loading " + name + " controllers...");
@@ -56,6 +57,7 @@ var Loader = Extension.extend({
                 console.log("    - " + controllerFilename + ' as - ' + controllerName);
                 var ControllerClass = require(path.join(controllersDir, controllerFilename));
                 this.app.modules[name].controllers[controllerName] = new ControllerClass(this);
+                this.app.modules[name].controllers[controllerName].dirname = path.join(modulesDir, name);
             }
             this.app.modules[name].ready();
         }
