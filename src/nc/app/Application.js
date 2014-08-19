@@ -7,7 +7,7 @@ var _appDir;
 var _mediator;
 
 /**
- * Loads configs from {appdir}/config directory and merges them into
+ * Loads configs from {%APPDIR%}/config directory and merges them into
  * one config literal object
  * @private
  */
@@ -43,7 +43,11 @@ function _loadExtensions() {
     var loading = true;
     var app = this;
 
-
+    /**
+     * Resolves extensions' dependencies
+     * @param name
+     * @private
+     */
     function _resolveDependencies(name) {
         if (awaitingExtensions.length === 0) {
             return;
@@ -132,19 +136,35 @@ var Application = util.Class({
         this._errorHandler = function(e) {throw e};
 
     },
+    /**
+     * Sets/Gets application's dir
+     * @param {String} dir
+     * @returns {*}
+     */
     dir: function (dir) {
         if (dir) {
             _appDir = dir;
         }
         return _appDir;
     },
+    /**
+     * Gets application's mediator
+     * @returns {*}
+     */
     mediator: function() {
 
         return _mediator;
     },
+    /**
+     * @todo: implement better extension support
+     */
     use: function() {
 
     },
+    /**
+     * Starts the application, load extensions, load modules
+     * and handles input
+     */
     run: function() {
         if (!fs.existsSync(this.dir())) {
             throw new Error('Non existing application dir.' + this.dir() + ' Make sure you set up application dir correctly.');
@@ -161,7 +181,9 @@ var Application = util.Class({
         this.mediator().dispatch(Application.ON_RUN, this);
     },
     /**
-     * Sets/gets error handler
+     * Sets/gets error handler.
+     * Handler will be called when application's module will throw an Error
+     * @param {Function} handler
      */
     error: function(handler) {
         if (handler) {

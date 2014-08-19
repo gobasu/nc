@@ -11,10 +11,13 @@ var Loader = Extension.extend({
     },
     ready: function() {
         var self = this;
-        self.app.mediator().addListener(Application.ON_READY, function() {
+        self.app.mediator().addListener(Application.ON_READY, function() {//load app modules only when all application's extensions are loaded and set up)
             self.loadAppModules();
         });
     },
+    /**
+     * Loads user's application modules located in %APPDIR%/modules directory
+     */
     loadAppModules: function() {
 
         console.log("Loading application modules");
