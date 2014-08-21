@@ -1,27 +1,19 @@
-var Extension = require('../../app/Extension.js');
-var Application = require('../../app/Application.js');
-var util = require('../../util');
+var util = require('../util');
 var path = require('path');
 var fs = require('fs');
 
-var Loader = Extension.extend({
+var Loader = util.Class({
     create: function(app) {
-      this.app = app;
-      this.modules = {};
-    },
-    ready: function() {
-        var self = this;
-        self.app.mediator().addListener(Application.ON_READY, function() {//load app modules only when all application's extensions are loaded and set up)
-            self.loadAppModules();
-        });
+        this.app = app;
+        this.modules = {};
     },
     /**
      * Loads user's application modules located in %APPDIR%/modules directory
      */
-    loadAppModules: function() {
-
-        console.log("Loading application modules");
-
+    load: function() {
+        console.log("===============================");
+        console.log("= Loading application modules =");
+        console.log("===============================");
         var modulesDir = path.join(this.app.dir(), 'modules');
 
         if (!fs.existsSync(modulesDir)) {
@@ -41,7 +33,7 @@ var Loader = Extension.extend({
             var ModuleClass = require(modulePath);
             this.app.modules[name] = new ModuleClass(this.app);
             this.app.modules[name].controllers = {};
-            this.app.modules[name].dirname = path.join(modulesDir, name);
+            this.app.modules[name].__dirname__ = path.join(modulesDir, name);
 
             //load controllers
             console.log("Loading " + name + " controllers...");
@@ -57,9 +49,9 @@ var Loader = Extension.extend({
                 console.log("    - " + controllerFilename + ' as - ' + controllerName);
                 var ControllerClass = require(path.join(controllersDir, controllerFilename));
                 this.app.modules[name].controllers[controllerName] = new ControllerClass(this);
-                this.app.modules[name].controllers[controllerName].dirname = path.join(modulesDir, name);
+                this.app.modules[name].controllers[controllerName].__dirname__ = path.join(modulesDir, name);
             }
-            this.app.modules[name].ready();
+            this.app.modules[name].run();
         }
     }
 });

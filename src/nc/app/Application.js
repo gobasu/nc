@@ -2,9 +2,16 @@ var util = require('../util');
 var fs = require('fs');
 var path = require('path');
 var Extension = require('./Extension');
+var Loader = require('./Loader');
 
 var _appDir;
 var _mediator;
+
+
+function _onApplicationReady() {
+    this.loader = new Loader(this);
+    this.loader.load();
+}
 
 /**
  * Loads configs from {%APPDIR%}/config directory and merges them into
@@ -34,44 +41,52 @@ function _loadConfig() {
  * @private
  */
 function _loadExtensions() {
+    var readyExtensions = [];
     var loadedExtensions = [];
     var awaitingExtensions = [];
 
     var extensionsDir = path.join(Application.FW_DIR, 'extensions');
     var extensionList = fs.readdirSync(extensionsDir);
 
-    var loading = true;
     var app = this;
+    var onReadyDispatched = false;
+    var listing = true;
 
-    /**
-     * Resolves extensions' dependencies
-     * @param name
-     * @private
-     */
-    function _resolveDependencies(name) {
-        if (awaitingExtensions.length === 0) {
-            return;
-        }
+    app.mediator().addListener(Application.ON_READY, function clearOnExtensionReadyListeners() {
+        awaitingExtensions = [];
+        app.mediator().removeListener(Extension.ON_READY);
+        _onApplicationReady.call(app);
+    });
 
+    app.mediator().addListener(Extension.ON_READY, function addLoadedExtendionToList(event, extension) {
+        readyExtensions.push(extension.__name__);
+    });
+
+
+    function _onExtensionReadyHandler(event, ext) {
+        console.log("##########ON EVENT", event, ext.__name__, readyExtensions);
         for (var i in awaitingExtensions) {
             var extension = awaitingExtensions[i];
-
-            if (extension._dependencies.indexOf(name) >= 0) {
-                util.collection.remove(extension._dependencies, name);
-
-                if(extension._dependencies.length === 0) {
-                    console.log('Extension ' + extension._name + ' ready');
-                    extension.ready();
-                    util.collection.remove(awaitingExtensions, extension);
-                    if (awaitingExtensions.length > 0) {
-                        _resolveDependencies(extension._name);
-                    }
+            var shouldRun = true;
+            console.log('######checking dependencied', extension.__dependencies__);
+            for (var d in extension.__dependencies__) {
+                if (readyExtensions.indexOf(extension.__dependencies__[d]) < 0) {
+                    shouldRun = false;
+                    break;
                 }
+            }
+            if (shouldRun) {
+                console.log("Running extension " + extension.__name__);
+                util.collection.remove(awaitingExtensions, extension);
+                extension.run();
+                extension.ready();
             }
         }
 
-        if (!loading) {
-            app.mediator().dispatch(Application.ON_READY, this);
+        if (awaitingExtensions.length <= 0 && !listing && readyExtensions.length >= loadedExtensions.length) {
+            console.log('calling on ready');
+            onReadyDispatched = true;
+            app.mediator().dispatch(Application.ON_READY);
         }
     }
 
@@ -104,24 +119,42 @@ function _loadExtensions() {
             continue;
         }
 
-        this.extensions[name].__name = name;
+        this.extensions[name].__name__ = name;
 
         console.log('Extension ' + name + ' loaded');
+        loadedExtensions.push(name);
 
         if (Array.isArray(ExtensionClass['dependencies']) && ExtensionClass.dependencies.length > 0) {
-            this.extensions[name].__dependencies = util.copy(ExtensionClass.dependencies);
+            this.extensions[name].__dependencies__ = util.copy(ExtensionClass.dependencies);
             awaitingExtensions.push(this.extensions[name]);
+            app.mediator().addListener(Extension.ON_READY, _onExtensionReadyHandler.bind(this.extensions[name]));
             continue;
         }
-        console.log('Extension ' + name + ' ready');
-        this.extensions[name].ready();
-        loadedExtensions.push(name);
-        _resolveDependencies(name);
+
+        var dispatch = this.extensions[name].run();
+
+        if (!ExtensionClass.hasOwnProperty('async') || !ExtensionClass.async) {
+            console.log('Extension ' + name + ' ready');
+            this.extensions[name].ready();
+        }
     }
-    if (awaitingExtensions.length === 0) {
+    listing = false;
+    if (awaitingExtensions.length === 0 && readyExtensions.length >= loadedExtensions) {
+        console.log("dispatch application on ready");
         this.mediator().dispatch(Application.ON_READY, this);
+        onReadyDispatched = true;
     }
-    loading = false;
+
+    /**
+     * Checks if application on ready was called if not stops
+     * the application.
+     */
+    setTimeout(function checkIfApplicationIsReady(){
+        if (!onReadyDispatched) {
+            throw new Error("Could not run application. Loading extensions timed up");
+        }
+    }, 2000);
+
 }
 
 var Application = util.Class({

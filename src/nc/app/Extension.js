@@ -4,6 +4,7 @@ var Application = require('./Application');
 var Extension = util.Class({
     create: function(app, config) {
         this.app = app;
+        this.mediator = app.mediator();
         this.config = config;
     },
     path: function(string) {
@@ -11,9 +12,17 @@ var Extension = util.Class({
         string = string.replace('%FWDIR%', Application.FW_DIR);
         return string;
     },
+    run: function() {
+        throw new Error('Extension must implement run method');
+    },
+    dispatch: function(event) {
+        this.mediator.dispatch.apply(this.mediator, arguments);
+    },
     ready: function() {
-        throw new Error('Extension must implement ready method');
+        this.mediator.dispatch.apply(this.mediator, [Extension.ON_READY, this]);
     }
+}).static({
+    ON_READY: 'onExtensionReady'
 });
 
 module.exports = Extension;

@@ -10,7 +10,7 @@ var Controller = util.Class({
     },
     view: function(name) {
         if (!this.views.hasOwnProperty(name)) {
-            this.views[name] = new View(this.dirname, name);
+            this.views[name] = new View(this.__dirname__, name);
         }
         return this.views[name];
     }

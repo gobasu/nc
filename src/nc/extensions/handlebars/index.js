@@ -7,7 +7,7 @@ var fs = require('fs');
 var Handlebars = require('./handlebars');
 
 var HandlebarsExtension = Extension.extend({
-    ready: function() {
+    run: function() {
         var self = this;
         var themesDir = self.path(self.config.themesDir);
         var theme = self.config.defaultTheme;
@@ -28,7 +28,7 @@ var HandlebarsExtension = Extension.extend({
         Controller.prototype.view = function(name) {
             var path = theme + ":" + name;
             if (!this.views.hasOwnProperty(path)) {
-                this.views[path] = new View(this.dirname, name);
+                this.views[path] = new View(this.__dirname__, name);
             }
             return this.views[path];
         };
@@ -45,8 +45,9 @@ var HandlebarsExtension = Extension.extend({
             if (fs.existsSync(filePath)) {
                 return filePath;
             }
+            console.log(this);
 
-            filePath = path.join(this.dirname, 'views', name + '.html');
+            filePath = path.join(this.__dirname__, 'views', name + '.html');
             if (!fs.existsSync(filePath)) {
                 throw new Error("Template file " + name + " does not exists in " + filePath);
             }
@@ -59,7 +60,7 @@ var HandlebarsExtension = Extension.extend({
             this.data.__meta__ = {
                 dir: {
                     theme: path.join(themesDir, theme),
-                    module: self.dirname
+                    module: self.__dirname__
                 },
                 name: self.name,
                 file: self.filename,
@@ -78,10 +79,12 @@ var HandlebarsExtension = Extension.extend({
 
     }
 }).static({
+    dependencies: ['http'],
     defaults: {
         themesDir: "%APPDIR%/public/themes/",
         defaultTheme: "default"
     }
+
 });
 
 module.exports = HandlebarsExtension;

@@ -5,7 +5,7 @@ var path = require('path');
 
 var View = util.Class({
     create: function(dirname, tplName) {
-        this.dirname = dirname;
+        this.__dirname__ = dirname;
         this.name = tplName;
         this.filename = this.getTemplateFile(tplName);
         if (!fs.existsSync(this.filename)) {
@@ -14,7 +14,7 @@ var View = util.Class({
         this.template = this.loadTemplate(this.filename);
     },
     getTemplateFile: function(name) {
-        return path.join(this.dirname, 'views', name + '.html');
+        return path.join(this.__dirname__, 'views', name + '.html');
     },
     loadTemplate: function(filename) {
         return fs.readFileSync(filename);

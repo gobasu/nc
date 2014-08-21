@@ -1,6 +1,7 @@
 var Class = (function() {
 
     function _rewriteStatics(fnc, statics) {
+
         for (var prop in statics) {
             if (prop === 'extend' || prop === 'static' || prop === 'typeOf' || prop === 'mixin' ) {
                 continue;
@@ -8,7 +9,7 @@ var Class = (function() {
 
             if (typeof statics[prop] === 'object' || typeof statics[prop] === 'function') {
                 fnc[prop] = statics[prop];
-                return;
+                continue;
             }
 
             //check if static is a constant

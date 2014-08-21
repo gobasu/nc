@@ -36,6 +36,10 @@ var Observer = Class({
      * @memberOf nc.Observer
      */
     removeListener: function(event, listener) {
+        if (typeof listener === 'undefined') {
+            this._emitter.removeAllListeners(event);
+            return this;
+        }
         if (util.isArray(event)) {
             for (var i in event) {
                 var e = event[i];

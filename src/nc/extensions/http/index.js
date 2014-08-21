@@ -14,7 +14,7 @@ var HTTP = Extension.extend({
      *  - static files handler
      *  - session handler
      */
-    ready: function() {
+    run: function() {
         var self = this;
         self.express = express();
         self.router = express.Router();
@@ -47,8 +47,6 @@ var HTTP = Extension.extend({
 
         self.express.listen(self.config.port);
         console.log('HTTP - Server is running on port ' + self.config.port);
-
-
     },
     /**
      * Adds router support for application.
@@ -234,7 +232,8 @@ var HTTP = Extension.extend({
         secret: "secret",
         static: null
     },
-    dependencies: []
+    dependencies: [],
+    async: false
 });
 
 module.exports = HTTP;
