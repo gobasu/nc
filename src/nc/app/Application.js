@@ -64,11 +64,9 @@ function _loadExtensions() {
 
 
     function _onExtensionReadyHandler(event, ext) {
-        console.log("##########ON EVENT", event, ext.__name__, readyExtensions);
         for (var i in awaitingExtensions) {
             var extension = awaitingExtensions[i];
             var shouldRun = true;
-            console.log('######checking dependencied', extension.__dependencies__);
             for (var d in extension.__dependencies__) {
                 if (readyExtensions.indexOf(extension.__dependencies__[d]) < 0) {
                     shouldRun = false;
@@ -84,7 +82,6 @@ function _loadExtensions() {
         }
 
         if (awaitingExtensions.length <= 0 && !listing && readyExtensions.length >= loadedExtensions.length) {
-            console.log('calling on ready');
             onReadyDispatched = true;
             app.mediator().dispatch(Application.ON_READY);
         }
@@ -140,7 +137,6 @@ function _loadExtensions() {
     }
     listing = false;
     if (awaitingExtensions.length === 0 && readyExtensions.length >= loadedExtensions) {
-        console.log("dispatch application on ready");
         this.mediator().dispatch(Application.ON_READY, this);
         onReadyDispatched = true;
     }
@@ -160,7 +156,6 @@ function _loadExtensions() {
 var Application = util.Class({
     singleton: true,
     create: function() {
-        console.log('create application');
         _mediator = new util.Observer();
         this.config = {};
         this.extensions = {};

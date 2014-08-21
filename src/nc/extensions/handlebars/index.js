@@ -45,7 +45,6 @@ var HandlebarsExtension = Extension.extend({
             if (fs.existsSync(filePath)) {
                 return filePath;
             }
-            console.log(this);
 
             filePath = path.join(this.__dirname__, 'views', name + '.html');
             if (!fs.existsSync(filePath)) {
@@ -72,10 +71,6 @@ var HandlebarsExtension = Extension.extend({
         View.prototype.toString = function() {
             return this.render();
         };
-
-
-        console.log('Theme dir: '  + currentTheme);
-
 
     }
 }).static({

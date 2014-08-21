@@ -8,14 +8,13 @@ var mysql = require('mysql');
 var MySQL = Extension.extend({
     run: function() {
         var self = this;
-        console.log(self.config);
         self.connection = mysql.createConnection(self.config);
         //console.log(self.connection);
         self.connection.connect(function(err) {
             if (err) {
                 throw err;
             }
-            console.log('Mysql is connected');
+            console.log('MYSQL - connected');
 
             Model.prototype.connection = self.connection;
             Model.prototype.query = function() {
