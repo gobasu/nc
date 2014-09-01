@@ -1,4 +1,4 @@
 module.exports = {
-    app: require("app"),
-    util: require("util")
+    app: require("./app"),
+    util: require("./util")
 };
