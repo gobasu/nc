@@ -16,6 +16,9 @@ var https = require('https');
 var http = require('http');
 var i18n = require('i18n');
 
+//orm - sequelize
+var Sequelize = require('sequelize');
+
 /**
  * Creates simplyfied send API for controller
  * @param {Response} res express response object
@@ -157,31 +160,32 @@ var Application = util.Class({
     run: function() {
         if (!fs.existsSync(this.dir())) {
             throw new Error('Non existing application dir.' + this.dir() + ' Make sure you set up application dir correctly.');
+
         }
+        var self = this;
 
         //load config
         console.log('Loading configuration...');
-        _loadConfig.call(this);
-        var self = this;
+        _loadConfig.call(self);
+
         console.log('Starting up server...');
         console.log('  |');
-        this._express.use(bodyParser.urlencoded({ extended: true }));
-        this._express.use(bodyParser.json());
-        this._express.use(cookieParser(this.config.app.secret || "no secret set"));
-        this._express.use(session({
+        self._express.use(bodyParser.urlencoded({ extended: true }));
+        self._express.use(bodyParser.json());
+        self._express.use(cookieParser(this.config.app.secret || "no secret set"));
+        self._express.use(session({
             secret: self.config.app.secret || "no secret set",
             resave: false,
             saveUninitialized: true,
             name: 'nc.s.' + Math.round(Math.random() * 100)
         }));
 
-        if (this.config.http.public) {
-            this._express.use(express.static(this.path(this.config.http.public)));
-            console.log('  +- static: ' + this.config.http.public);
+        if (self.config.http.public) {
+            self._express.use(express.static(self.path(self.config.http.public)));
+            console.log('  +- static: ' + self.config.http.public);
         }
 
         //views config
-
         if (self.config.app.hasOwnProperty('theme')) {
             var themeDir = self.path(path.join('%APPDIR%', 'themes', self.config.app.theme));
             if (!fs.existsSync(themeDir)) {
@@ -198,9 +202,16 @@ var Application = util.Class({
             console.log('  +- views: ' + viewDir);
         }
 
+        //db config
+        if (self.config.hasOwnProperty('db')) {
+            self.db = new Sequelize(self.config.db.database, self.config.db.username, self.config.db.password, {
+                dialect: self.config.db.dialect || "mysql",
+                port: self.config.db.port || 3306
+            });
+        }
 
         //i18n?
-        if (this.config.app.hasOwnProperty('locale')) {
+        if (self.config.app.hasOwnProperty('locale')) {
             i18n.configure({
                 directory: self.path(self.config.app.locale.directory),
                 locales: self.config.app.locale.locales,
@@ -208,35 +219,10 @@ var Application = util.Class({
                 cookie: self.config.app.locale.cookie || "locale"
             });
             console.log('  +- loading locales: ' + self.config.app.locale.locales.join(','));
-            this._express.use(i18n.init);
+            self._express.use(i18n.init);
         }
 
-
-        this._express.use('/', this._router);
-
-        //setup http server
-        this.http = http.createServer(this._express).listen(this.config.http.port, this.config.http.host);
-        console.log('  +- http running on ' + this.config.http.host + ':' + this.config.http.port);
-
-        //setup https server
-        if (this.config.http.secure) {
-            var key = fs.readFileSync(this.path(this.config.http.key)).toString();
-            var cert = fs.readFileSync(this.path(this.config.http.cert)).toString();
-            var options = {
-                key: key,
-                cert: cert
-            };
-            var port = this.config.http.secure === true ? 443 : this.config.http.secure;
-            this.https = https.createServer(options, this._express).listen(port, this.config.http.host);
-            console.log('  +- https running on ' + this.config.http.host + ':' + this.config.http.port);
-        }
-        console.log('  *');
-
-        //load application controllers
-        var loader = new Loader(this);
-        loader.load();
-
-
+        self._express.use('/', self._router);
 
         /**
          * Handles route, extends controller by;
@@ -337,19 +323,60 @@ var Application = util.Class({
             }
         };
 
-        //initialize controllers
-        for(var ctrl in this.controllers) {
-            if (typeof this.controllers[ctrl]['setup'] === 'function') {
-                this.controllers[ctrl].setup(router, this.mediator);
+        //application loader
+        var loader = new Loader(self);
+
+        function _runServer() {
+            //setup http server
+            self.http = http.createServer(self._express).listen(self.config.http.port, self.config.http.host);
+            console.log('  +- http running on ' + self.config.http.host + ':' + self.config.http.port);
+
+            //setup https server
+            if (self.config.http.secure) {
+                var key = fs.readFileSync(self.path(self.config.http.key)).toString();
+                var cert = fs.readFileSync(self.path(self.config.http.cert)).toString();
+                var options = {
+                    key: key,
+                    cert: cert
+                };
+                var port = self.config.http.secure === true ? 443 : self.config.http.secure;
+                self.https = https.createServer(options, self._express).listen(port, self.config.http.host);
+                console.log('  +- https running on ' + self.config.http.host + ':' + self.config.http.port);
             }
+
+
+            loader.controllers();
+
+
+            //initialize controllers
+            for(var ctrl in self.controllers) {
+                if (typeof self.controllers[ctrl]['setup'] === 'function') {
+                    self.controllers[ctrl].setup(router, self.mediator);
+                }
+            }
+
+            //404 error
+            self._router.get('*', function(req, res) {
+                if (req.url !== '/favicon.ico') {
+                    self._onError.apply(self, [new Error("Not found " + req.url), req, res]);
+                }
+            });
         }
 
-        //404 error
-        this._router.get('*', function(req, res) {
-            if (req.url !== '/favicon.ico') {
-                self._onError.apply(this, [new Error("Not found " + req.url), req, res]);
-            }
-        });
+        if (!self.hasOwnProperty('db')) {
+            _runServer();
+        } else {
+            console.log('  +- connecting to database...');
+            self.db.authenticate().complete(function(err) {
+                if (err) {
+                    console.log('      +- ' + err);
+                } else {
+                    loader.models();
+                    console.log('      +- success');
+                    _runServer();
+                }
+            });
+        }
 
     },
     /**

@@ -28,7 +28,7 @@ var Controller = util.Class({
         this.app.config.app.theme = name;
     },
     model: function(name) {
-        
+        return this.app.db.hasOwnProperty(name) ? this.app.db[name] : null;
     }
 });
 

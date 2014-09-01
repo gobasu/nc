@@ -9,7 +9,7 @@ var Loader = util.Class({
     /**
      * Loads user's application controllers located in %APPDIR%/controllers directory
      */
-    load: function() {
+    controllers: function() {
 
         console.log("Loading controllers");
         console.log("  |");
@@ -30,6 +30,19 @@ var Loader = util.Class({
             console.log('  +- ' + name );
         }
         console.log('  *');
+    },
+    models: function() {
+        var modelsDir = path.join(this.app.dir(), 'models');
+        if (!fs.existsSync(modelsDir)) {
+            return;
+        }
+        var modelsList = fs.readdirSync(modelsDir);
+        for (var i in modelsList) {
+            var file = modelsList[i];
+            var model = this.app.db.import(path.join(modelsDir, file));
+            this.app.db[model.name] = model;
+        }
+
     }
 });
 

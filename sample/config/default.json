@@ -11,10 +11,11 @@
         "theme": "default"
     },
     "db": {
-        "host": "",
-        "username": "",
-        "password": "",
-        "database": ""
+        "dialect": "mysql",
+        "host": "localhost",
+        "username": "root",
+        "password": "bitnami",
+        "database": "classicmodels"
     },
     "http": {
         "public": "%APPDIR%/public",

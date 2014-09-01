@@ -12,9 +12,23 @@ var self = Controller.extend({
         this.session.a++;
 
         //var l = this.getLocale();
+
         //console.log('locale ', l);
 
+        var Customers = this.model('Customers');
+
+        Customers.find({
+            where: {
+                customerNumber: {
+                    gt: 200
+                }
+            }
+        }).then(function(data) {
+            console.log(data);
+        });
+
         var view = this.view('index');
+
         view.data({title: "Sample Title"});
         view.render().then(function(view) {
             self.send.text(view);
