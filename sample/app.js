@@ -1,4 +1,4 @@
-var Application = require('../n-core/app/application');
+var Application = require('../src/nc').app.Application;
 
 
 var app = new Application();

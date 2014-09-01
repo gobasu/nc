@@ -1,4 +1,4 @@
-var Controller = require('../../n-core/app/controller');
+var Controller = require('../../src/nc').app.Controller;
 
 
 var self = Controller.extend({
