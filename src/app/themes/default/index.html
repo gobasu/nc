@@ -1,0 +1,15 @@
+{% block header %}
+This is the default content {{title}}
+{% endblock %}
+
+<section class="left">
+    {% block left %}{% endblock %}
+</section>
+
+        i18n test: {{_('Hello and welcome to n-core')}}
+
+<section class="right">
+    {% block right %}
+    This is more content
+    {% endblock %}
+</section>

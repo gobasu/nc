@@ -3,5 +3,4 @@ module.exports = {
     Module: require("./Module"),
     Controller: require("./Controller"),
     View: require("./View"),
-    Model: require("./Model")
 };

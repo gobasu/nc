@@ -1,0 +1,32 @@
+{
+    "app": {
+        "name": "app name",
+        "secret": "my secret key",
+        "locale": {
+            "directory": "%APPDIR%/locales",
+            "cookie": "locale",
+            "locales": ["en", "pl"],
+            "default": "pl"
+        },
+        "theme": "default"
+    },
+    "db": {
+        "host": "",
+        "username": "",
+        "password": "",
+        "database": ""
+    },
+    "http": {
+        "public": "%APPDIR%/public",
+        "port": 8080,
+        "secure": false,
+        "key": "",
+        "cert": "",
+        "host": ""
+    },
+    "example": {
+        "config_1": 1,
+        "config_2": 2
+    }
+
+}
