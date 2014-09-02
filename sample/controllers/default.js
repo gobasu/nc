@@ -7,7 +7,7 @@ var self = Controller.extend({
         var self = this;
 
         //self.setLocale('pl');
-
+/*
         console.log('default page');
         this.session.a++;
 
@@ -15,7 +15,7 @@ var self = Controller.extend({
 
         //console.log('locale ', l);
 
-        var Customers = this.model('Customers');
+        /*var Customers = this.model('Customers');
 
         Customers.find({
             where: {
@@ -24,8 +24,8 @@ var self = Controller.extend({
                 }
             }
         }).then(function(data) {
-            console.log(data);
-        });
+            //console.log(data);
+        });*
 
         var view = this.view('index');
 
@@ -35,7 +35,8 @@ var self = Controller.extend({
         }).catch(function (e){
             console.log(e);
         });
-
+*/
+        self.send.text("dupa");
 
         //this.setLocale('pl');
 

@@ -1,6 +1,6 @@
 {
-    "name": "n-core",
-    "version": "0.2.0",
+    "name": "nc",
+    "version": "0.3.1",
     "description": "NodeCore Web Framework",
     "private": true,
     "main": "src/nc/index.js",
