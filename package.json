@@ -1,6 +1,6 @@
 {
-    "name": "n-core",
-    "version": "0.2.0",
+    "name": "nc",
+    "version": "0.3.0",
     "description": "NodeCore Web Framework",
     "private": true,
     "main": "src/nc/index.js",
@@ -12,7 +12,7 @@
         "type": "git",
         "url": "https://github.com/webbakers/nc.git"
     },
-    "author": "Crac",
+    "author": "krhak",
     "devDependencies": {
         "jasmine-node": "latest"
     },
