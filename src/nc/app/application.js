@@ -33,7 +33,7 @@ function createSendObject(res) {
          */
         json: function(object, status) {
             var status = status || 200;
-            res.set('Content-Type', 'application/json');
+            res.setHeader('Content-Type', 'application/json');
             res.status(status).send(JSON.stringify(object));
         },
         /**
@@ -43,7 +43,7 @@ function createSendObject(res) {
          */
         html: function(html, status) {
             var status = status || 200;
-            res.set('Content-Type', 'text/html');
+            res.setHeader('Content-Type', 'text/html');
             res.status(status).send(html);
         },
         /**
@@ -53,7 +53,7 @@ function createSendObject(res) {
          */
         text: function(text, status) {
             var status = status || 200;
-            res.set('Content-Type', 'text/plain');
+            res.setHeader('Content-Type', 'text/plain');
             res.status(status).send(text);
         }
     };
@@ -134,6 +134,7 @@ var Application = util.Class({
         this._onSuccess = function() {};
         this._appDir = process.cwd();
         this._express = express();
+        this._express.disable('x-powered-by');
         this._router = express.Router();
     },
     /**
@@ -187,19 +188,10 @@ var Application = util.Class({
 
         //views config
         if (self.config.app.hasOwnProperty('theme')) {
-            var themeDir = self.path(path.join('%APPDIR%', 'themes', self.config.app.theme));
-            if (!fs.existsSync(themeDir)) {
-                throw new Error('Theme dir `' + themeDir + '` does not exists');
-            }
-            View.dir(themeDir);
-            console.log('  +- themes: ' + themeDir);
+            console.log('  +- setting theme: ' + self.config.app.theme);
+            self.theme(self.config.app.theme);
         } else {
-            var viewDir = self.path(path.join('%APPDIR%', 'views'));
-            if (!fs.existsSync(viewDir)) {
-                throw new Error('Neither theme dir or view dir was found');
-            }
-            View.dir(viewDir);
-            console.log('  +- views: ' + viewDir);
+            throw new Error("No theme set, please set theme property in app.theme config");
         }
 
         //db config
@@ -329,6 +321,7 @@ var Application = util.Class({
         function _runServer() {
             //setup http server
             self.http = http.createServer(self._express).listen(self.config.http.port, self.config.http.host);
+
             console.log('  +- http running on ' + self.config.http.host + ':' + self.config.http.port);
 
             //setup https server
@@ -341,6 +334,7 @@ var Application = util.Class({
                 };
                 var port = self.config.http.secure === true ? 443 : self.config.http.secure;
                 self.https = https.createServer(options, self._express).listen(port, self.config.http.host);
+
                 console.log('  +- https running on ' + self.config.http.host + ':' + self.config.http.port);
             }
 
@@ -350,16 +344,17 @@ var Application = util.Class({
 
             //initialize controllers
             for(var ctrl in self.controllers) {
-                if (typeof self.controllers[ctrl]['setup'] === 'function') {
-                    self.controllers[ctrl].setup(router, self.mediator);
+                if (typeof self.controllers[ctrl]['load'] === 'function') {
+                    self.controllers[ctrl].load(router, self.mediator);
                 }
             }
 
             //404 error
             self._router.get('*', function(req, res) {
-                if (req.url !== '/favicon.ico') {
-                    self._onError.apply(self, [new Error("Not found " + req.url), req, res]);
+                if (req.url === '/favicon.ico') {
+                    return;
                 }
+                self._onError.apply(self, [new Error('404 Not Found'), req, res]);
             });
         }
 
@@ -385,21 +380,53 @@ var Application = util.Class({
      * @param {Function} handler
      */
     error: function() {
-        if (arguments.length >= 1) {
-            this._onError = arguments[0];
-        }
-        return this._onError;
+        this._onError.apply(this, arguments);
     },
-    success: function() {
-        if (arguments.length >= 1) {
-            this._onSuccess = arguments[0];
-        }
-        return this._onSuccess;
+    onError: function(handler) {
+        this._onError = handler;
     },
     path: function(string) {
         string = string.replace('%APPDIR%', this.dir());
         string = string.replace('%FWDIR%', Application.FW_DIR);
         return string;
+    },
+    /**
+     * Sets or gets current application theme
+     * @param name
+     */
+    theme: function(name) {
+        if (!name) {
+            return this.config.app.theme;
+        }
+
+        var dir = this.path(path.join('%APPDIR%', 'themes', name));
+        View.dir(dir);
+        this.config.app.theme = name;
+
+        //
+        // Symlink to assets handling
+        //
+
+        //no public dir do not create symlink
+        if (!this.config.app.hasOwnProperty('public')) {
+            console.warn('No public directory set in app.config');
+            return;
+        }
+
+        var themeAssets = path.join(dir, 'assets');
+        var publicAssets = path.join(this.path(this.config.app.public), 'assets');
+
+        //remove old symlink if exists
+        if (fs.existsSync(publicAssets)) {
+            fs.unlinkSync(publicAssets);
+        }
+        //create symlink to theme's assets
+        fs.symlinkSync(themeAssets, publicAssets, 'dir');
+        //check symlink
+        if (!fs.existsSync(publicAssets)) {
+            console.error('Creating symlink failed run ln -s ' + themeAssets + ' ' + publicAssets + ' from terminal');
+        }
+
     }
 }).static({
     FW_DIR: path.resolve(path.join(__dirname, '..')),

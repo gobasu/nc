@@ -19,13 +19,13 @@ var Controller = util.Class({
         return this.views[name]
     },
     get theme() {
-        return this._theme;
+        if (this.app) {
+            return this.app.theme();
+        }
+        return undefined;
     },
     set theme(name) {
-        var dir = this.app.path(path.join('%APPDIR%', 'themes', name));
-        View.dir(dir);
-        this._theme = name;
-        this.app.config.app.theme = name;
+        this.app.theme(name);
     },
     model: function(name) {
         return this.app.db.hasOwnProperty(name) ? this.app.db[name] : null;

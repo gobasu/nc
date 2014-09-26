@@ -5,6 +5,7 @@ var Promise = require('promise');
 
 var View = util.Class({
     create: function(file) {
+        this._data = {};
         this._file = file;
     },
     data: function(object) {
@@ -14,7 +15,9 @@ var View = util.Class({
         var self = this;
         self._data._ = this.__;
         self._data._n = this._n;
-
+        self._data.assets = function(uri) {
+            return 'assets/' + uri;
+        };
 
         return new Promise(function(fullfill, reject) {
             nunjucks.render(self._file + '.html', self._data, function(err, res) {
